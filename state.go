@@ -370,7 +370,7 @@ func (s *HandshakeState) ReadMessage(out, message []byte) ([]byte, *CipherState,
 	for _, msg := range s.messagePatterns[s.msgIdx] {
 		switch msg {
 		case MessagePatternE, MessagePatternS:
-			expected := s.ss.cs.DHLen()
+			expected := s.ss.cs.PubLen()
 			if msg == MessagePatternS && s.ss.hasK {
 				expected += 16
 			}
@@ -379,10 +379,10 @@ func (s *HandshakeState) ReadMessage(out, message []byte) ([]byte, *CipherState,
 			}
 			switch msg {
 			case MessagePatternE:
-				if cap(s.re) < s.ss.cs.DHLen() {
-					s.re = make([]byte, s.ss.cs.DHLen())
+				if cap(s.re) < s.ss.cs.PubLen() {
+					s.re = make([]byte, s.ss.cs.PubLen())
 				}
-				s.re = s.re[:s.ss.cs.DHLen()]
+				s.re = s.re[:s.ss.cs.PubLen()]
 				copy(s.re, message)
 				s.ss.MixHash(s.re)
 				if s.ss.hasPSK {
