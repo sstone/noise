@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	. "github.com/flynn/noise"
+	. "github.com/sstone/noise"
 )
 
 func main() {
@@ -17,6 +17,8 @@ func main() {
 				for _, psk := range []bool{false, true} {
 					payloads := (psk && hi%2 == 0) || (!psk && hi%2 != 0)
 					prologue := ci == 0
+					writeHandshake(os.Stdout, NewCipherSuite(SECP256k1, cipher, hash), handshake, psk, prologue, payloads)
+					fmt.Fprintln(os.Stdout)
 					writeHandshake(os.Stdout, NewCipherSuite(DH25519, cipher, hash), handshake, psk, prologue, payloads)
 					fmt.Fprintln(os.Stdout)
 				}
