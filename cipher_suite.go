@@ -7,14 +7,12 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/binary"
-	"fmt"
 	"hash"
 	"io"
 
 	"github.com/devi/blake2/blake2s"
 	"github.com/devi/chap"
 	"github.com/minio/blake2b-simd"
-	"github.com/roasbeef/btcd/btcec"
 	"golang.org/x/crypto/curve25519"
 )
 
@@ -131,75 +129,6 @@ func (dh25519) DH(privkey, pubkey []byte) []byte {
 func (dh25519) DHLen() int     { return 32 }
 func (dh25519) PubLen() int    { return 32 }
 func (dh25519) DHName() string { return "25519" }
-
-// SECP256k1Alt is our alternate secp256k1 ECDH function.
-var SECP256k1Alt DHFunc = secp256k1Alt{}
-
-type secp256k1Alt struct{}
-
-func (secp256k1Alt) GenerateKeypair(rng io.Reader) DHKey {
-	var privkey [32]byte
-	if rng == nil {
-		rng = rand.Reader
-	}
-	if _, err := io.ReadFull(rng, privkey[:]); err != nil {
-		panic(err)
-	}
-	_, pub := btcec.PrivKeyFromBytes(btcec.S256(), privkey[:])
-	pubkey := pub.SerializeCompressed()
-	//fmt.Fprintf(os.Stdout, "priv=%x pub=%x\n", privkey, pubkey)
-
-	return DHKey{Private: privkey[:], Public: pubkey[:]}
-}
-
-func (secp256k1Alt) DH(privkey, pubkey []byte) []byte {
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privkey)
-	pub, err := btcec.ParsePubKey(pubkey, btcec.S256())
-	if err != nil {
-		fmt.Printf("error %v\n", err)
-	}
-	x, y := pub.Curve.ScalarMult(pub.X, pub.Y, priv.D.Bytes())
-	pub.X = x
-	pub.Y = y
-	return pub.SerializeCompressed()
-}
-
-func (secp256k1Alt) DHLen() int     { return 33 }
-func (secp256k1Alt) PubLen() int    { return 33 }
-func (secp256k1Alt) DHName() string { return "secp256k1" }
-
-// SECP256k1 is the secp256k1 ECDH function.
-var SECP256k1 DHFunc = secp256k1{}
-
-type secp256k1 struct{}
-
-func (secp256k1) GenerateKeypair(rng io.Reader) DHKey {
-	var privkey [32]byte
-	if rng == nil {
-		rng = rand.Reader
-	}
-	if _, err := io.ReadFull(rng, privkey[:]); err != nil {
-		panic(err)
-	}
-	_, pub := btcec.PrivKeyFromBytes(btcec.S256(), privkey[:])
-	pubkey := pub.SerializeCompressed()
-	//fmt.Fprintf(os.Stdout, "priv=%x pub=%x\n", privkey, pubkey)
-
-	return DHKey{Private: privkey[:], Public: pubkey[:]}
-}
-
-func (secp256k1) DH(privkey, pubkey []byte) []byte {
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privkey)
-	pub, err := btcec.ParsePubKey(pubkey, btcec.S256())
-	if err != nil {
-		fmt.Printf("error %v\n", err)
-	}
-	return btcec.GenerateSharedSecret(priv, pub)
-}
-
-func (secp256k1) DHLen() int     { return 32 }
-func (secp256k1) PubLen() int    { return 33 }
-func (secp256k1) DHName() string { return "secp256k1" }
 
 type cipherFn struct {
 	fn   func([32]byte) Cipher
